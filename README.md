@@ -204,17 +204,53 @@ LMS/
 
 ## Deployment
 
-### Backend (Render/Railway)
-1. Connect your repository
-2. Set environment variables
-3. Deploy
+### Deploy to Vercel (Recommended)
 
-### Frontend (Vercel/Netlify)
+This project is optimized for Vercel deployment with both frontend and backend in a single repository.
+
+**Quick Deploy:**
+
+1. Push your code to GitHub
+2. Go to https://vercel.com/dashboard
+3. Click "Add New..." → "Project"
+4. Import your GitHub repository
+5. Add environment variables (see below)
+6. Click "Deploy"
+
+**Environment Variables for Vercel:**
+
+Add these in Vercel dashboard under Settings → Environment Variables:
+
+```
+MONGODB_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_secure_jwt_secret
+HUGGINGFACE_API_KEY=your_huggingface_api_key
+NODE_ENV=production
+```
+
+**After Deployment:**
+
+1. Visit `https://your-project.vercel.app/api/seed` to populate the database
+2. Access your app at `https://your-project.vercel.app`
+3. Login with test accounts (see Test Accounts section)
+
+**Detailed Guide:** See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for step-by-step instructions.
+
+### Alternative Deployment Options
+
+**Backend (Render/Railway):**
 1. Connect your repository
-2. Set build command: `npm run build`
-3. Set output directory: `dist`
-4. Set environment variables
-5. Deploy
+2. Set root directory to `backend`
+3. Set environment variables
+4. Deploy
+
+**Frontend (Netlify):**
+1. Connect your repository
+2. Set base directory to `frontend`
+3. Set build command: `npm run build`
+4. Set publish directory: `frontend/dist`
+5. Set environment variables
+6. Deploy
 
 ## Contributing
 
