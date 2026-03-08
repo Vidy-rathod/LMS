@@ -1,0 +1,83 @@
+===========================================
+  ALL COMMANDS TO RUN LMS PLATFORM
+===========================================
+
+OPTION 1: EASIEST WAY
+----------------------
+Double-click: START_EVERYTHING.bat
+
+
+OPTION 2: MANUAL COMMANDS
+--------------------------
+
+TERMINAL 1 - Backend:
+---------------------
+cd backend
+npm start
+
+(Wait for "Server running on port 5000")
+
+
+TERMINAL 2 - Seed Database:
+----------------------------
+Invoke-RestMethod -Uri "http://localhost:5000/api/seed" -Method Post
+
+(Wait for "Database seeded successfully")
+
+
+TERMINAL 3 - Frontend:
+----------------------
+cd frontend
+npm run dev
+
+(Wait for "Local: http://localhost:5173")
+
+
+OPEN BROWSER:
+-------------
+http://localhost:5173
+
+
+LOGIN:
+------
+Email: student@example.com
+Password: password123
+
+
+TEST CHATBOT:
+-------------
+1. Click chat bubble (bottom right)
+2. Ask: "Hello, how are you?"
+3. Ask: "Explain JavaScript"
+4. Ask: "Tell me a joke"
+
+
+BACKEND CONSOLE SHOULD SHOW:
+-----------------------------
+Trying Hugging Face API with official client...
+Using token: hf_tILEFWn...
+Hugging Face API success!
+
+
+FEATURES:
+---------
+✅ AI Chatbot (Hugging Face Mistral-7B)
+✅ Video unlocking (sequential access)
+✅ Progress tracking (resume videos)
+✅ Dashboard with charts
+✅ 7 courses, 72 lessons
+
+
+TROUBLESHOOTING:
+----------------
+If port 5000 is busy:
+  taskkill /F /IM node.exe
+  (Then restart backend)
+
+If frontend port busy:
+  It will auto-select 5174 or 5175
+
+
+===========================================
+  ENJOY YOUR LMS PLATFORM! 🚀
+===========================================
