@@ -6,7 +6,8 @@ const Section = require('../models/Section');
 const Lesson = require('../models/Lesson');
 const Quiz = require('../models/Quiz');
 
-router.post('/seed', async (req, res) => {
+// Seed function
+const seedDatabase = async (req, res) => {
   try {
     // Clear existing data
     await User.deleteMany();
@@ -1041,6 +1042,10 @@ router.post('/seed', async (req, res) => {
     console.error('Seed error:', error);
     res.status(500).json({ message: 'Error seeding database', error: error.message });
   }
-});
+};
+
+// Support both GET and POST for easier access
+router.get('/seed', seedDatabase);
+router.post('/seed', seedDatabase);
 
 module.exports = router;
