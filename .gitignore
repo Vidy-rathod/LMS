@@ -40,3 +40,6 @@ coverage/
 .cache/
 temp/
 tmp/
+
+# Sensitive setup files (contain credentials)
+VERCEL_ENV_SETUP.md
