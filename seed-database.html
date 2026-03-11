@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seed Database</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #0070f3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Seed Your Database</h1>
+        <p>Enter your Vercel deployment URL below:</p>
+        
+        <input 
+            type="text" 
+            id="apiUrl" 
+            placeholder="https://your-project.vercel.app"
+            value="https://your-project.vercel.app"
+        />
+        
+        <button onclick="seedDatabase()" id="seedBtn">
+            Seed Database
+        </button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function seedDatabase() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const resultDiv = document.getElementById('result');
+            const seedBtn = document.getElementById('seedBtn');
+            
+            // Validate URL
+            if (!apiUrl) {
+                showResult('Please enter your Vercel URL', 'error');
+                return;
+            }
+            
+            // Remove trailing slash if present
+            const baseUrl = apiUrl.replace(/\/$/, '');
+            const seedUrl = `${baseUrl}/api/seed`;
+            
+            // Disable button and show loading
+            seedBtn.disabled = true;
+            seedBtn.textContent = 'Seeding... Please wait...';
+            resultDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch(seedUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`
+                        <strong>✅ Success!</strong><br><br>
+                        ${data.message}<br><br>
+                        <strong>Test Accounts:</strong><br>
+                        <strong>Student:</strong> ${data.testAccounts.student.email} / ${data.testAccounts.student.password}<br>
+                        <strong>Instructor:</strong> ${data.testAccounts.instructor.email} / ${data.testAccounts.instructor.password}<br><br>
+                        <strong>Data Created:</strong><br>
+                        <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    showResult(`
+                        <strong>❌ Error</strong><br><br>
+                        ${data.message || 'Failed to seed database'}<br><br>
+                        ${data.error ? `<pre>${data.error}</pre>` : ''}
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`
+                    <strong>❌ Network Error</strong><br><br>
+                    Could not connect to: ${seedUrl}<br><br>
+                    Error: ${error.message}<br><br>
+                    <strong>Possible issues:</strong><br>
+                    • Wrong URL<br>
+                    • Backend not deployed<br>
+                    • CORS issue<br>
+                    • Network problem
+                `, 'error');
+            } finally {
+                seedBtn.disabled = false;
+                seedBtn.textContent = 'Seed Database';
+            }
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

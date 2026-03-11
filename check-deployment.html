@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Deployment Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px 24px;
+            background: #0070f3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .check-item {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #ddd;
+            background: #f9f9f9;
+        }
+        .check-item.pass {
+            border-left-color: #28a745;
+        }
+        .check-item.fail {
+            border-left-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Deployment Diagnostics</h1>
+        <p>Enter your Vercel deployment URL to check the status:</p>
+        
+        <input 
+            type="text" 
+            id="apiUrl" 
+            placeholder="https://your-project.vercel.app"
+        />
+        
+        <div>
+            <button onclick="checkHealth()">1. Check Backend Health</button>
+            <button onclick="checkEnvVars()">2. Check Environment Variables</button>
+            <button onclick="testSignup()">3. Test Signup</button>
+            <button onclick="testLogin()">4. Test Login</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function getBaseUrl() {
+            const url = document.getElementById('apiUrl').value.trim();
+            if (!url) {
+                showResult('Please enter your Vercel URL', 'error');
+                return null;
+            }
+            return url.replace(/\/$/, '');
+        }
+
+        async function checkHealth() {
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            showResult('Checking backend health...', 'warning');
+
+            try {
+                const response = await fetch(`${baseUrl}/api`);
+                const data = await response.json();
+
+                let html = '<h3>✅ Backend Health Check</h3>';
+                html += `<div class="check-item pass">
+                    <strong>Status:</strong> Backend is running!<br>
+                    <strong>Message:</strong> ${data.message}
+                </div>`;
+
+                if (data.mongodb) {
+                    html += `<div class="check-item ${data.mongodb === 'connected' ? 'pass' : 'fail'}">
+                        <strong>MongoDB:</strong> ${data.mongodb}
+                    </div>`;
+                }
+
+                if (data.env) {
+                    html += '<h4>Environment Variables:</h4>';
+                    for (const [key, value] of Object.entries(data.env)) {
+                        const status = value === 'set' ? 'pass' : 'fail';
+                        html += `<div class="check-item ${status}">
+                            <strong>${key}:</strong> ${value}
+                        </div>`;
+                    }
+                }
+
+                html += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                showResult(html, 'success');
+            } catch (error) {
+                showResult(`
+                    <h3>❌ Backend Health Check Failed</h3>
+                    <div class="check-item fail">
+                        <strong>Error:</strong> ${error.message}<br>
+                        <strong>URL Tried:</strong> ${baseUrl}/api
+                    </div>
+                    <p><strong>Possible Issues:</strong></p>
+                    <ul>
+                        <li>Wrong URL</li>
+                        <li>Backend not deployed</li>
+                        <li>Network issue</li>
+                    </ul>
+                `, 'error');
+            }
+        }
+
+        async function checkEnvVars() {
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            showResult('Checking environment variables...', 'warning');
+
+            try {
+                const response = await fetch(`${baseUrl}/api`);
+                const data = await response.json();
+
+                if (!data.env) {
+                    showResult('Environment variables info not available', 'warning');
+                    return;
+                }
+
+                let html = '<h3>Environment Variables Status</h3>';
+                const required = ['MONGODB_URI', 'JWT_SECRET', 'HUGGINGFACE_API_KEY', 'NODE_ENV'];
+                
+                for (const key of required) {
+                    const value = data.env[key];
+                    const status = value === 'set' ? 'pass' : 'fail';
+                    html += `<div class="check-item ${status}">
+                        <strong>${key}:</strong> ${value || 'missing'}
+                    </div>`;
+                }
+
+                const allSet = required.every(key => data.env[key] === 'set');
+                
+                if (!allSet) {
+                    html += `
+                        <div class="check-item fail">
+                            <strong>⚠️ Action Required:</strong><br>
+                            Go to Vercel Dashboard → Your Project → Settings → Environment Variables<br>
+                            Add the missing variables and redeploy.
+                        </div>
+                    `;
+                }
+
+                showResult(html, allSet ? 'success' : 'error');
+            } catch (error) {
+                showResult(`Error checking environment variables: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSignup() {
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            showResult('Testing signup...', 'warning');
+
+            const testUser = {
+                name: 'Test User',
+                email: `test${Date.now()}@example.com`,
+                password: 'password123',
+                role: 'student'
+            };
+
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testUser)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(`
+                        <h3>✅ Signup Works!</h3>
+                        <div class="check-item pass">
+                            <strong>User Created:</strong> ${data.name}<br>
+                            <strong>Email:</strong> ${data.email}<br>
+                            <strong>Role:</strong> ${data.role}<br>
+                            <strong>Token:</strong> ${data.token ? 'Generated' : 'Missing'}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    showResult(`
+                        <h3>❌ Signup Failed</h3>
+                        <div class="check-item fail">
+                            <strong>Status:</strong> ${response.status}<br>
+                            <strong>Error:</strong> ${data.message || 'Unknown error'}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`
+                    <h3>❌ Signup Request Failed</h3>
+                    <div class="check-item fail">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            showResult('Testing login with seeded account...', 'warning');
+
+            const credentials = {
+                email: 'student@example.com',
+                password: 'password123'
+            };
+
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(credentials)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(`
+                        <h3>✅ Login Works!</h3>
+                        <div class="check-item pass">
+                            <strong>User:</strong> ${data.name}<br>
+                            <strong>Email:</strong> ${data.email}<br>
+                            <strong>Role:</strong> ${data.role}<br>
+                            <strong>Token:</strong> ${data.token ? 'Generated' : 'Missing'}
+                        </div>
+                        <p>✅ Database is seeded and authentication works!</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    showResult(`
+                        <h3>❌ Login Failed</h3>
+                        <div class="check-item fail">
+                            <strong>Status:</strong> ${response.status}<br>
+                            <strong>Error:</strong> ${data.message || 'Unknown error'}
+                        </div>
+                        ${data.message === 'Invalid credentials' ? 
+                            '<p><strong>⚠️ Database not seeded!</strong><br>Visit: ' + baseUrl + '/api/seed</p>' : 
+                            ''}
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`
+                    <h3>❌ Login Request Failed</h3>
+                    <div class="check-item fail">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+        }
+    </script>
+</body>
+</html>

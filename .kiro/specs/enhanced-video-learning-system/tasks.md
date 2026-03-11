@@ -53,7 +53,7 @@ This implementation plan addresses enhancements to the existing video learning s
     - **Property 5: Description Updates on Navigation**
     - **Validates: Requirements 2.4**
 
-- [ ] 3. Checkpoint - Verify layout and navigation functionality
+- [-] 3. Checkpoint - Verify layout and navigation functionality
   - Ensure all tests pass, ask the user if questions arise.
 
 - [-] 4. Seed comprehensive course content with descriptions
